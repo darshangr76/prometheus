@@ -19,27 +19,28 @@ std::shared_ptr<Tensor> transpose_2d(std::shared_ptr<Tensor> input) {
 std::shared_ptr<Tensor> Attention::scaled_dot_product_attention(
     std::shared_ptr<Tensor> Q, 
     std::shared_ptr<Tensor> K, 
-    std::shared_ptr<Tensor> V
+    std::shared_ptr<Tensor> V,
+    bool causal_mask // New parameter
 ) {
-    // 1. Transpose K so we can multiply Q * K^T
     auto K_T = transpose_2d(K);
-    
-    // 2. Calculate Scores = Q @ K^T
     auto scores = Q->matmul(K_T);
     
-    // 3. Scale the scores by 1 / sqrt(d_k)
-    // d_k is the last dimension of Q (the embedding size)
     float d_k = static_cast<float>(Q->shape[1]);
     float scale_factor = 1.0f / std::sqrt(d_k);
+    size_t seq_len = Q->shape[0];
     
-    for (size_t i = 0; i < scores->data->size(); i++) {
-        (*scores->data)[i] *= scale_factor;
+    for (size_t i = 0; i < seq_len; i++) {
+        for (size_t j = 0; j < seq_len; j++) {
+            if (causal_mask && j > i) {
+                // Mask out the future (set to negative infinity)
+                (*scores->data)[i * seq_len + j] = -1e9f;
+            } else {
+                (*scores->data)[i * seq_len + j] *= scale_factor;
+            }
+        }
     }
     
-    // 4. Apply Softmax to get Attention Weights (probabilities)
     auto attention_weights = scores->softmax();
-    
-    // 5. Multiply the weights by V to get the final output
     auto output = attention_weights->matmul(V);
     
     return output;
