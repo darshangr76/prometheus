@@ -4,3 +4,4 @@ build/
 llm_train_debug
 llm_train_debug.dSYM/
 llm_train
+rust_scheduler/target/
