@@ -1,3 +1,6 @@
+llm_train
+llm_train_debug
+training_data.txt
 attention_test
 embedding_test
 ffn_test
@@ -5,6 +8,6 @@ mha_test
 tokenizer_test
 transformer_test
 vectordb_test
-training_data.txt
 *.dSYM/
 build/
+target/
