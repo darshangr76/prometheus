@@ -34,3 +34,67 @@ std::shared_ptr<Tensor> FeedForward::forward(std::shared_ptr<Tensor> x) {
     
     return out;
 }
+std::shared_ptr<Tensor> FeedForward::backward(std::shared_ptr<Tensor> d_out, std::shared_ptr<Tensor> x) {
+    auto h1 = x->matmul(W1)->add(B1);
+    auto h2 = h1->relu();
+    
+    size_t M = h2->shape[0], K = h2->shape[1], N = d_out->shape[1];
+    for (size_t i = 0; i < K; i++) {
+        for (size_t j = 0; j < N; j++) {
+            float sum = 0.0f;
+            for (size_t s = 0; s < M; s++) sum += (*h2->data)[s * K + i] * (*d_out->data)[s * N + j];
+            (*W2->grad)[i * N + j] += sum;
+        }
+    }
+    for (size_t j = 0; j < N; j++) {
+        float sum = 0.0f;
+        for (size_t s = 0; s < M; s++) sum += (*d_out->data)[s * N + j];
+        (*B2->grad)[j] += sum;
+    }
+    
+    auto d_h2 = std::make_shared<Tensor>(h2->shape);
+    for (size_t s = 0; s < M; s++) {
+        for (size_t i = 0; i < K; i++) {
+            float sum = 0.0f;
+            for (size_t j = 0; j < N; j++) sum += (*d_out->data)[s * N + j] * (*W2->data)[i * N + j];
+            (*d_h2->data)[s * K + i] = sum;
+        }
+    }
+    
+    auto d_h1 = std::make_shared<Tensor>(h1->shape);
+    for (size_t i = 0; i < h1->data->size(); i++) {
+        (*d_h1->data)[i] = ((*h1->data)[i] > 0.0f) ? (*d_h2->data)[i] : 0.0f;
+    }
+    
+    M = x->shape[0]; K = x->shape[1]; N = d_h1->shape[1];
+    for (size_t i = 0; i < K; i++) {
+        for (size_t j = 0; j < N; j++) {
+            float sum = 0.0f;
+            for (size_t s = 0; s < M; s++) sum += (*x->data)[s * K + i] * (*d_h1->data)[s * N + j];
+            (*W1->grad)[i * N + j] += sum;
+        }
+    }
+    for (size_t j = 0; j < N; j++) {
+        float sum = 0.0f;
+        for (size_t s = 0; s < M; s++) sum += (*d_h1->data)[s * N + j];
+        (*B1->grad)[j] += sum;
+    }
+    
+    auto d_x = std::make_shared<Tensor>(x->shape);
+    for (size_t s = 0; s < M; s++) {
+        for (size_t i = 0; i < K; i++) {
+            float sum = 0.0f;
+            for (size_t j = 0; j < N; j++) sum += (*d_h1->data)[s * N + j] * (*W1->data)[i * N + j];
+            (*d_x->data)[s * K + i] = sum;
+        }
+    }
+    return d_x;
+}
+
+void FeedForward::zero_grad() {
+    W1->zero_grad(); B1->zero_grad(); W2->zero_grad(); B2->zero_grad();
+}
+
+void FeedForward::sgd_step(float lr) {
+    W1->sgd_step(lr); B1->sgd_step(lr); W2->sgd_step(lr); B2->sgd_step(lr);
+}

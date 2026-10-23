@@ -46,3 +46,44 @@ std::shared_ptr<Tensor> LayerNorm::forward(std::shared_ptr<Tensor> x) {
     
     return result;
 }
+std::shared_ptr<Tensor> LayerNorm::backward(std::shared_ptr<Tensor> d_out, std::shared_ptr<Tensor> x) {
+    size_t rows = x->shape[0], cols = x->shape[1];
+    auto d_x = std::make_shared<Tensor>(x->shape);
+    for (size_t i = 0; i < rows; i++) {
+        float mean = 0.0f;
+        for (size_t j = 0; j < cols; j++) mean += (*x->data)[i * cols + j];
+        mean /= cols;
+        float var = 0.0f;
+        for (size_t j = 0; j < cols; j++) {
+            float diff = (*x->data)[i * cols + j] - mean;
+            var += diff * diff;
+        }
+        var /= cols;
+        float std_dev = std::sqrt(var + eps);
+        float sum_d_out = 0.0f, sum_d_out_x_hat = 0.0f;
+        for (size_t j = 0; j < cols; j++) {
+            float x_hat = ((*x->data)[i * cols + j] - mean) / std_dev;
+            float d_out_val = (*d_out->data)[i * cols + j] * (*gamma->data)[j];
+            sum_d_out += d_out_val;
+            sum_d_out_x_hat += d_out_val * x_hat;
+        }
+        for (size_t j = 0; j < cols; j++) {
+            float x_hat = ((*x->data)[i * cols + j] - mean) / std_dev;
+            float d_out_val = (*d_out->data)[i * cols + j] * (*gamma->data)[j];
+            (*d_x->data)[i * cols + j] = (1.0f / cols) * (1.0f / std_dev) * (cols * d_out_val - sum_d_out - x_hat * sum_d_out_x_hat);
+            (*gamma->grad)[j] += (*d_out->data)[i * cols + j] * x_hat;
+            (*beta->grad)[j] += (*d_out->data)[i * cols + j];
+        }
+    }
+    return d_x;
+}
+
+void LayerNorm::zero_grad() {
+    gamma->zero_grad();
+    beta->zero_grad();
+}
+
+void LayerNorm::sgd_step(float lr) {
+    gamma->sgd_step(lr);
+    beta->sgd_step(lr);
+}

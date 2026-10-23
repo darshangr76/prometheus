@@ -2,24 +2,35 @@
 #include "../include/attention.h"
 
 int main() {
-    size_t seq_len = 2;
-    size_t embed_dim = 2;
+    int embed_dim = 4;
+    int seq_len = 3;
     
-    auto Q = std::make_shared<Tensor>(std::vector<size_t>{seq_len, embed_dim});
-    auto K = std::make_shared<Tensor>(std::vector<size_t>{seq_len, embed_dim});
-    auto V = std::make_shared<Tensor>(std::vector<size_t>{seq_len, embed_dim});
+    // Create a dummy input tensor
+    auto x = std::make_shared<Tensor>(std::vector<size_t>{(size_t)seq_len, (size_t)embed_dim});
+    for (size_t i = 0; i < seq_len * embed_dim; i++) {
+        (*x->data)[i] = (float)(i % 5) * 0.1f;
+    }
     
-    // Q = [[1, 1], [1, 0]]
-    (*Q->data) = {1.0f, 1.0f, 1.0f, 0.0f};
-    // K = [[1, 0], [0, 1]]
-    (*K->data) = {1.0f, 0.0f, 0.0f, 1.0f};
-    // V = [[1, 2], [3, 4]]
-    (*V->data) = {1.0f, 2.0f, 3.0f, 4.0f};
+    std::cout << "Input (3x4):" << std::endl;
+    x->print();
     
-    auto output = Attention::scaled_dot_product_attention(Q, K, V);
+    // Create the Attention layer
+    Attention attn(embed_dim);
     
-    std::cout << "=== Attention Output ===" << std::endl;
-    output->print();
+    // Forward pass
+    auto out = attn.forward(x, false);
+    std::cout << "\nAttention Output:" << std::endl;
+    out->print();
+    
+    // Backward pass (just to check it runs)
+    auto d_out = std::make_shared<Tensor>(out->shape);
+    for (size_t i = 0; i < out->data->size(); i++) {
+        (*d_out->data)[i] = 1.0f; // Fake gradient
+    }
+    
+    auto d_x = attn.backward(d_out, false);
+    std::cout << "\nBackward Output:" << std::endl;
+    d_x->print();
     
     return 0;
 }
