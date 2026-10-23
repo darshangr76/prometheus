@@ -23,8 +23,11 @@ int main() {
     for (int id : token_ids) std::cout << id << " ";
     std::cout << std::endl;
     
+    float lr = 0.1f;
+    
     for (int epoch = 0; epoch < 100; epoch++) {
-        // 1. Convert tokens to vectors, then to a Tensor
+        lm_head.weights->zero_grad();
+        
         auto embeddings_vec = embed.forward(token_ids);
         auto x = std::make_shared<Tensor>(std::vector<size_t>{embeddings_vec.size(), (size_t)embed_dim});
         for (size_t i = 0; i < embeddings_vec.size(); i++) {
@@ -33,23 +36,21 @@ int main() {
             }
         }
         
-        // 2. Transformer Block
         auto out = block.forward(x, x, x, x);
-        
-        // 3. Output Head
         auto logits = lm_head.forward(out);
         
-        // 4. Targets (next token)
         std::vector<int> targets = token_ids;
         for (size_t i = 0; i < targets.size() - 1; i++) targets[i] = token_ids[i + 1];
         targets[targets.size() - 1] = token_ids[0];
         
-        // 5. Loss
         float loss = lm_head.compute_loss(logits, targets);
         
         if (epoch % 10 == 0) {
             std::cout << "Epoch " << epoch << " | Loss: " << loss << std::endl;
         }
+        
+        auto d_out = lm_head.backward(out, logits, targets);
+        lm_head.weights->sgd_step(lr);
     }
     
     return 0;
