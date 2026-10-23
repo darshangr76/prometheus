@@ -12,11 +12,13 @@ public:
     std::vector<size_t> strides;
     std::shared_ptr<std::vector<float>> data;
     std::shared_ptr<std::vector<float>> grad;
-    std::shared_ptr<Tensor> sigmoid();
-    // Graph tracking
     std::shared_ptr<Tensor> left;
     std::shared_ptr<Tensor> right;
     std::string op;
+
+    // For Adam Optimizer (must be inside the class)
+    std::shared_ptr<std::vector<float>> m;
+    std::shared_ptr<std::vector<float>> v;
 
     Tensor();
     Tensor(std::vector<size_t> shape);
@@ -31,11 +33,14 @@ public:
     // Activation Functions
     std::shared_ptr<Tensor> relu();
     std::shared_ptr<Tensor> softmax();
+    std::shared_ptr<Tensor> sigmoid();
     
-    // NEW: Autograd
+    // Autograd
     void backward();
-    // NEW: Loss Functions & Optimizer
+    
+    // Loss Functions & Optimizers
     float mse_loss(std::shared_ptr<Tensor> target);
     void sgd_step(float learning_rate);
+    void adam_step(float lr, float beta1 = 0.9f, float beta2 = 0.999f, float eps = 1e-8f);
     void zero_grad();
 };

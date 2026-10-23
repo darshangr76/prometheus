@@ -13,4 +13,5 @@ public:
     std::shared_ptr<Tensor> backward(std::shared_ptr<Tensor> d_out, bool causal_mask);
     void zero_grad();
     void sgd_step(float lr);
+    void adam_step(float lr);  // <--- Declaration only
 };

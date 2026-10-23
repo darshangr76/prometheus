@@ -98,3 +98,7 @@ void FeedForward::zero_grad() {
 void FeedForward::sgd_step(float lr) {
     W1->sgd_step(lr); B1->sgd_step(lr); W2->sgd_step(lr); B2->sgd_step(lr);
 }
+void FeedForward::adam_step(float lr) {
+    W1->adam_step(lr); B1->adam_step(lr);
+    W2->adam_step(lr); B2->adam_step(lr);
+}

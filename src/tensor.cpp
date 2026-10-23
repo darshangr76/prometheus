@@ -3,7 +3,12 @@
 #include <stdexcept>
 #include <algorithm>
 
-Tensor::Tensor() {}
+Tensor::Tensor() {
+    data = std::make_shared<std::vector<float>>(0, 0.0f);
+    grad = std::make_shared<std::vector<float>>(0, 0.0f);
+    m = std::make_shared<std::vector<float>>(0, 0.0f);
+    v = std::make_shared<std::vector<float>>(0, 0.0f);
+}
 
 Tensor::Tensor(std::vector<size_t> shape) : shape(shape) {
     size_t total_size = 1;
@@ -11,7 +16,8 @@ Tensor::Tensor(std::vector<size_t> shape) : shape(shape) {
     
     data = std::make_shared<std::vector<float>>(total_size, 0.0f);
     grad = std::make_shared<std::vector<float>>(total_size, 0.0f);
-    
+    m = std::make_shared<std::vector<float>>(total_size, 0.0f);  // ADD THIS
+    v = std::make_shared<std::vector<float>>(total_size, 0.0f);  // ADD THIS
     strides.resize(shape.size(), 1);
     size_t current_stride = 1;
     for (int i = shape.size() - 1; i >= 0; i--) {
@@ -225,4 +231,14 @@ std::shared_ptr<Tensor> Tensor::softmax() {
     result->op = "softmax";
     return result;
 }
-
+void Tensor::adam_step(float lr, float beta1, float beta2, float eps) {
+    static int t = 0;
+    t++;
+    for (size_t i = 0; i < data->size(); i++) {
+        (*m)[i] = beta1 * (*m)[i] + (1.0f - beta1) * (*grad)[i];
+        (*v)[i] = beta2 * (*v)[i] + (1.0f - beta2) * (*grad)[i] * (*grad)[i];
+        float m_hat = (*m)[i] / (1.0f - std::pow(beta1, t));
+        float v_hat = (*v)[i] / (1.0f - std::pow(beta2, t));
+        (*data)[i] -= lr * m_hat / (std::sqrt(v_hat) + eps);
+    }
+}

@@ -87,3 +87,7 @@ void LayerNorm::sgd_step(float lr) {
     gamma->sgd_step(lr);
     beta->sgd_step(lr);
 }
+void LayerNorm::adam_step(float lr) {
+    gamma->adam_step(lr);
+    beta->adam_step(lr);
+}

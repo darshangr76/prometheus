@@ -142,3 +142,7 @@ void Attention::zero_grad() {
 void Attention::sgd_step(float lr) {
     W_q->sgd_step(lr); W_k->sgd_step(lr); W_v->sgd_step(lr); W_o->sgd_step(lr);
 }
+
+void Attention::adam_step(float lr) {
+    W_q->adam_step(lr); W_k->adam_step(lr); W_v->adam_step(lr); W_o->adam_step(lr);
+}

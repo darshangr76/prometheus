@@ -11,4 +11,5 @@ public:
     std::shared_ptr<Tensor> backward(std::shared_ptr<Tensor> d_out, std::shared_ptr<Tensor> x);
     void zero_grad();
     void sgd_step(float lr);
+    void adam_step(float lr);  // <--- MUST be inside the class
 };
