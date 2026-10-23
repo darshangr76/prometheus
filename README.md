@@ -1,5 +1,4 @@
 # Prometheus: Bare-Metal AI Engine
-# Prometheus: Bare-Metal AI Engine 🧠
 
 A complete Transformer LLM built from scratch in C++. No PyTorch. No TensorFlow. Just raw math and memory management.
 
