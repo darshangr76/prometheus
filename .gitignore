@@ -1,8 +1,10 @@
+attention_test
+embedding_test
+ffn_test
+mha_test
+tokenizer_test
+transformer_test
+vectordb_test
+training_data.txt
+*.dSYM/
 build/
-.DS_Store
-*.o
-llm_train_debug
-llm_train_debug.dSYM/
-llm_train
-rust_scheduler/target/
-rust_scheduler/target/
